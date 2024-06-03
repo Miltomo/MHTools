@@ -9,6 +9,10 @@
     <Version>1.0.0</Version>
     <Title>MHTools</Title>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Description>稳定易用的开发实用工具集合。目前包含：数据处理；ADB连接。</Description>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/Miltomo/MHTools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Miltomo/MHTools</RepositoryUrl>
   </PropertyGroup>
 
 </Project>
