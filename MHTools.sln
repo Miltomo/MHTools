@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.34929.205
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MHTools", "MHTools.csproj", "{EBDA6626-5C37-485D-B931-81BCC5F221F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MHTools", "MHTools.csproj", "{EBDA6626-5C37-485D-B931-81BCC5F221F7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "测试", "..\测试\测试.csproj", "{F99E10E0-4940-48C9-A72A-90FA64144F18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{EBDA6626-5C37-485D-B931-81BCC5F221F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EBDA6626-5C37-485D-B931-81BCC5F221F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EBDA6626-5C37-485D-B931-81BCC5F221F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F99E10E0-4940-48C9-A72A-90FA64144F18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F99E10E0-4940-48C9-A72A-90FA64144F18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F99E10E0-4940-48C9-A72A-90FA64144F18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F99E10E0-4940-48C9-A72A-90FA64144F18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

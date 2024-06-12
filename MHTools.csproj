@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <TargetFramework>net8.0</TargetFramework>
+	  <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
 	  <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>Miltomo</Authors>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Title>MHTools</Title>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Description>稳定易用的开发实用工具集合。目前包含：数据处理；ADB连接。</Description>

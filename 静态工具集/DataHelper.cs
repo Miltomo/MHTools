@@ -5,9 +5,20 @@ using System.Text.Json;
 
 namespace MHTools
 {
+    /// <summary>
+    /// 数据处理帮助工具集
+    /// </summary>
     public static class DataHelper
     {
-        public static readonly BindingFlags ALLKINDS = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+        private static readonly BindingFlags ALLKINDS = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+
+        private static readonly JsonSerializerOptions _Options_JSON_ = new()
+        {
+            IncludeFields = true,
+            IgnoreReadOnlyFields = true,
+            IgnoreReadOnlyProperties = true,
+            WriteIndented = true,
+        };
 
         /// <summary>
         /// 标记一个类，其中所有变量均为存储目标「MHTools.DataHelper」
@@ -29,13 +40,18 @@ namespace MHTools
         /// </summary>
         [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
         public class ToSaveAttribute : Attribute { }
+
         /// <summary>
         /// 标记一个成员变量为非存储目标。(仅当SaveAll时生效)「MHTools.DataHelper」
         /// </summary>
-
         [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
         public class DoNotSaveAttribute : Attribute { }
 
+        /// <summary>
+        /// 获取目标类型的所有被标记为"数据存储对象"的成员名称
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string[] GetToSaveMemberName(Type type)
         {
             IEnumerable<MemberInfo> orins;
@@ -64,7 +80,7 @@ namespace MHTools
         }
 
         /// <summary>
-        /// 强制获取目标成员变量
+        ///  (反射) 强制获取目标成员变量
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="memberName"></param>
@@ -86,12 +102,12 @@ namespace MHTools
             return ReadValue(type, memberName, instance: target);
         }
 
-
         /// <summary>
         /// (反射) 强制读值
         /// </summary>
-        /// <param name="instance"></param>
+        /// <param name="type"></param>
         /// <param name="memberName"></param>
+        /// <param name="instance"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public static object? ReadValue(Type type, string memberName, object? instance = default)
@@ -122,11 +138,12 @@ namespace MHTools
         }
 
         /// <summary>
-        /// 强制修改目标成员变量
+        ///  (反射) 强制修改目标成员变量
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="value"></param>
         /// <param name="memberName"></param>
+        /// <exception cref="UnsuccessfullySetValueException"></exception>
         public static void SetValue(object obj, object value, string memberName)
         {
             Type? type;
@@ -147,9 +164,11 @@ namespace MHTools
         /// <summary>
         /// (反射) 强制赋值
         /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="memberName"></param>
+        /// <param name="type"></param>
         /// <param name="value"></param>
+        /// <param name="memberName"></param>
+        /// <param name="instance"></param>
+        /// <exception cref="UnsuccessfullySetValueException"></exception>
         public static void SetValue(Type type, object value, string memberName, object? instance = default)
         {
             MemberInfo[] members = type.GetMember(memberName, ALLKINDS);
@@ -158,15 +177,22 @@ namespace MHTools
             {
                 MemberInfo member = members[0];
 
-                if (member is FieldInfo fieldInfo)
+                try
                 {
-                    Type targetType = fieldInfo.FieldType;
-                    fieldInfo.SetValue(instance, ConvertType(value, targetType));
+                    if (member is FieldInfo fieldInfo)
+                    {
+                        Type targetType = fieldInfo.FieldType;
+                        fieldInfo.SetValue(instance, ConvertType(value, targetType));
+                    }
+                    else if (member is PropertyInfo propertyInfo)
+                    {
+                        Type targetType = propertyInfo.PropertyType;
+                        propertyInfo.SetValue(instance, ConvertType(value, targetType));
+                    }
                 }
-                else if (member is PropertyInfo propertyInfo)
+                catch (Exception ex)
                 {
-                    Type targetType = propertyInfo.PropertyType;
-                    propertyInfo.SetValue(instance, ConvertType(value, targetType));
+                    throw new UnsuccessfullySetValueException(type, memberName, ex);
                 }
             }
         }
@@ -175,7 +201,7 @@ namespace MHTools
 
 
         /// <summary>
-        /// 强制类型转换，支持基本类型、数组、泛型(包括且仅包括List、Queue、Stack、Dictionary、ISet)
+        ///  (反射) 强制类型转换，支持基本类型、数组、枚举、泛型(包括且仅包括List、Queue、Stack、Dictionary、ISet)
         /// </summary>
         /// <param name="value"></param>
         /// <param name="targetType"></param>
@@ -185,8 +211,16 @@ namespace MHTools
             // 处理泛型
             if (targetType.IsGenericType)
             {
-                // List
-                if (targetType.GetGenericTypeDefinition() == typeof(List<>))
+                // 检查是否是IEnumerable<T>的衍生类
+                /*var isIE =
+                    typeof(IEnumerable<>)
+                    .MakeGenericType(targetType.GetGenericArguments())
+                    .IsAssignableFrom(targetType);*/
+
+                var GTD = targetType.GetGenericTypeDefinition();
+
+                // List | IEnumerable
+                if (GTD == typeof(List<>) || GTD == typeof(IEnumerable<>))
                 {
                     Type elementType = targetType.GetGenericArguments()[0];
                     IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType));
@@ -199,7 +233,7 @@ namespace MHTools
                     return list;
                 }
                 // Queue
-                else if (targetType.GetGenericTypeDefinition() == typeof(Queue<>))
+                else if (GTD == typeof(Queue<>))
                 {
                     Type elementType = targetType.GetGenericArguments()[0];
                     Queue queue = (Queue)Activator.CreateInstance(typeof(Queue<>).MakeGenericType(elementType));
@@ -212,7 +246,7 @@ namespace MHTools
                     return queue;
                 }
                 // Stack
-                else if (targetType.GetGenericTypeDefinition() == typeof(Stack<>))
+                else if (GTD == typeof(Stack<>))
                 {
                     Type elementType = targetType.GetGenericArguments()[0];
                     Stack stack = (Stack)Activator.CreateInstance(typeof(Stack<>).MakeGenericType(elementType));
@@ -225,7 +259,7 @@ namespace MHTools
                     return stack;
                 }
                 // Dictionary
-                else if (targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                else if (GTD == typeof(Dictionary<,>))
                 {
                     Type keyType = targetType.GetGenericArguments()[0];
                     Type valueType = targetType.GetGenericArguments()[1];
@@ -299,6 +333,7 @@ namespace MHTools
 
                 return array;
             }
+            // 处理枚举
             else if (targetType.IsEnum)
             {
                 return Enum.ToObject(targetType, value);
@@ -321,40 +356,12 @@ namespace MHTools
             return type == typeof(int) || type == typeof(long) || type == typeof(float) || type == typeof(double);
         }
 
-        public static Type GetType(object obj, string memberName)
-        {
-            Type type = obj.GetType();
-            MemberInfo[] members = type.GetMember(memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (members.Length > 0)
-            {
-                MemberInfo member = members[0];
-
-                if (member is FieldInfo fieldInfo)
-                {
-                    return fieldInfo.FieldType;
-                }
-                else if (member is PropertyInfo propertyInfo)
-                {
-                    return propertyInfo.PropertyType;
-                }
-                else
-                {
-                    throw new Exception();
-                }
-            }
-            else
-            {
-                throw new Exception();
-            }
-        }
-
         /// <summary>
-        /// (反射) 使用JSON保存目标的所有[ToSave]成员变量；或者当目标类为[SaveAll]时，保存所有成员变量
+        /// 将object表示的对象还原为Type表示；当其本就不为Type时，调用GetType()
         /// </summary>
         /// <param name="obj"></param>
-        /// <param name="filePath"></param>
-        public static void SaveAllToSaveAsJSON(object obj, string filePath)
+        /// <returns></returns>
+        public static Type ToType(object obj)
         {
             Type? type;
             try
@@ -366,101 +373,15 @@ namespace MHTools
                 type = obj.GetType();
             }
 
-            var nameS = GetToSaveMemberName(type);
-
-            Dictionary<string, object> dt = new();
-            foreach (var name in nameS)
-            {
-                var value = ReadValue(obj, name);
-                if (value != null)
-                    dt.Add(name, value);
-            }
-
-            SaveToJSON(dt, filePath);
+            return type!;
         }
 
         /// <summary>
-        ///(反射) 使用JSON文件的数据修改对象
+        /// 将JSON对象转换为C#对象
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <param name="filePath"></param>
-        public static T? LoadFromJSON<T>(T obj, string filePath)
-        {
-            var orin = LoadFromJSON<Dictionary<string, JsonElement>>(filePath);
-            var data = new Dictionary<string, object>();
-
-            if (orin is null)
-                return obj;
-
-            foreach (var kvp in orin)
-            {
-                var value = TransJsonElement(kvp.Value);
-                if (value != null)
-                    data.Add(kvp.Key, value);
-            }
-
-            foreach (var item in data.Keys.ToArray())
-            {
-                if (data.TryGetValue(item, out var value))
-                    SetValue(obj, value, item);
-            };
-
-            return obj;
-        }
-
-        /// <summary>
-        /// 将目标数据序列化为JSON文件
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="data"></param>
-        /// <param name="filePath"></param>
-        public static void SaveToJSON<T>(T data, string filePath)
-        {
-            var options = new JsonSerializerOptions
-            {
-                IncludeFields = true,
-                IgnoreReadOnlyFields = true,
-                IgnoreReadOnlyProperties = true,
-                WriteIndented = true,
-            };
-
-            // 将对象序列化为 JSON 字符串
-            string jsonData = JsonSerializer.Serialize(data, options);
-
-            // 将 JSON 字符串保存到文件
-            File.WriteAllText(filePath, jsonData);
-        }
-
-        /// <summary>
-        /// 将JSON文件反序列化为目标对象
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="filePath"></param>
+        /// <param name="element"></param>
         /// <returns></returns>
-        public static T? LoadFromJSON<T>(string filePath)
-        {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    IncludeFields = true,
-                };
-
-                // 从文件中读取 JSON 字符串
-                string jsonData = File.ReadAllText(filePath);
-
-                // 将 JSON 字符串反序列化为对象
-                return JsonSerializer.Deserialize<T>(jsonData);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
-                return default;
-            }
-        }
-
-
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static object? TransJsonElement(JsonElement element)
         {
             switch (element.ValueKind)
@@ -494,5 +415,114 @@ namespace MHTools
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        #region SAVE
+        /// <summary>
+        /// (反射) 使用JSON保存目标的所有[ToSave]成员变量；或者当目标类为[SaveAll]时，保存所有成员变量
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="filePath"></param>
+        public static void SaveAllToSaveAsJSON(object obj, string filePath)
+        {
+            var nameS = GetToSaveMemberName(ToType(obj));
+
+            Dictionary<string, object> dt = [];
+            foreach (var name in nameS)
+            {
+                var value = ReadValue(obj, name);
+                if (value != null)
+                    dt.Add(name, value);
+            }
+
+            SaveToJSON(dt, filePath);
+        }
+
+
+        /// <summary>
+        /// 将目标数据序列化为JSON文件
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <param name="filePath"></param>
+        public static void SaveToJSON<T>(T data, string filePath)
+        {
+            // 将对象序列化为 JSON 字符串
+            string jsonData = JsonSerializer.Serialize(data, _Options_JSON_);
+
+            // 将 JSON 字符串保存到文件
+            File.WriteAllText(filePath, jsonData);
+        }
+        #endregion
+
+        #region LOAD
+        /// <summary>
+        ///(反射) 使用JSON文件的数据修改对象
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="filePath"></param>
+        public static T? LoadFromJSON<T>(T obj, string filePath)
+        {
+            var orin = LoadFromJSON<Dictionary<string, JsonElement>>(filePath);
+            var data = new Dictionary<string, object>();
+
+            if (orin is null)
+                return obj;
+
+            foreach (var kvp in orin)
+            {
+                var value = TransJsonElement(kvp.Value);
+                if (value != null)
+                    data.Add(kvp.Key, value);
+            }
+
+            foreach (var item in data.Keys.ToArray())
+            {
+                if (data.TryGetValue(item, out var value))
+                {
+                    try
+                    {
+                        SetValue(obj, value, item);
+                    }
+                    catch (Exception e)
+                    {
+                        string errorText = $"{e.Message}\n因为：{e.InnerException!.Message}\n{e.StackTrace}";
+                        Console.WriteLine(errorText);
+                        Trace.WriteLine(errorText);
+                    }
+                }
+            };
+
+            return obj;
+        }
+
+        /// <summary>
+        /// 将JSON文件反序列化为目标对象
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static T? LoadFromJSON<T>(string filePath)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    IncludeFields = true,
+                };
+
+                // 从文件中读取 JSON 字符串
+                string jsonData = File.ReadAllText(filePath);
+
+                // 将 JSON 字符串反序列化为对象
+                return JsonSerializer.Deserialize<T>(jsonData);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return default;
+            }
+        }
+        #endregion
     }
 }
