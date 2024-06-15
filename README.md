@@ -1,12 +1,13 @@
 # MHTools
 Nuget: https://www.nuget.org/packages/MHTools/  
-×Ô¼ºÔÚ¿ª·¢ÖĞ×Ü½á³öÀ´µÄ¿É¸´ÓÃµÄ¹¤¾ß£¬¾¡Á¿×öµ½ÎÈ¶¨¡¢¼æÈİ¡¢Ò×ÓÃ¡£  
-·Ç³£ÍÆ¼öÊ¹ÓÃÆäÖĞÊı¾İ¹¤¾ß(DataHelper)¡¢ADB¹¤¾ß(ADBHelper)
+è‡ªå·±åœ¨å¼€å‘ä¸­æ€»ç»“å‡ºæ¥çš„å¯å¤ç”¨çš„å·¥å…·ï¼Œå°½é‡åšåˆ°ç¨³å®šã€å…¼å®¹ã€æ˜“ç”¨ã€‚  
+éå¸¸æ¨èä½¿ç”¨å…¶ä¸­æ•°æ®å·¥å…·(DataHelper)ã€ADBå·¥å…·(ADBHelper)   
+è§†é¢‘æ•™ç¨‹ï¼š[ã€C#/.NETã€‘Githubå¼€æºå·¥å…·é›†ã€MHToolsã€‘ä»‹ç»](https://www.bilibili.com/video/BV1uUV8efE4W)
 
 # API
 ## MHTools
-## ¾²Ì¬¹¤¾ßÀà¡¸using static MHTools.¡¹
-- DataHelper
+## é™æ€å·¥å…·ç±»ã€Œusing static MHTools.ã€
+- [DataHelper](https://github.com/Miltomo/MHTools/blob/master/%E6%96%87%E6%A1%A3/DataHelper.md)
 - TimeTool
-## (°²×¿)Ä£ÄâÆ÷Àà ¡¸MHTools.MoniWorld¡¹
+## (å®‰å“)æ¨¡æ‹Ÿå™¨ç±» ã€ŒMHTools.MoniWorldã€
 - ADBHelper
